@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      name="description"
+      content="SSECOUNT — explore word frequencies, discover writing patterns, and download complete text analysis reports."
+    />
+    <title>SSECOUNT · Text Analysis Studio</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <!-- Navigation -->
+    <aside>
+      <a class="brand" href="/">SSE<span>COUNT</span></a>
+      <p class="tagline">TEXT ANALYSIS STUDIO</p>
+      <div class="nav-title">YOUR WORKSPACE</div>
+      <a class="nav-link" href="#upload">↥ &nbsp; Your document</a
+      ><a class="nav-link" href="#overview">◈ &nbsp; Overview</a
+      ><a class="nav-link" href="#explore">≋ &nbsp; Word insights</a>
+      <div class="sidebar-note">
+        <h3>A little clarity,<br />one word at a time.</h3>
+        <p>Upload. Explore. Export.<br />Built for curious minds.</p>
+      </div>
+    </aside>
+    <main>
+      <header>
+        <span class="eyebrow">YOUR WORDS. A CLEARER PICTURE.</span>
+      </header>
+      <h1>Text analysis, made simple.</h1>
+      <p class="intro">
+        Discover the patterns in your writing with instant word counts,
+        frequency insights, and a report you can take with you.
+      </p>
+      <section class="hero">
+        <div>
+          <span class="eyebrow">MEET YOUR WORDS</span>
+          <h2>Every word has a story.</h2>
+          <p>Bring your document. We’ll help you see what stands out.</p>
+        </div>
+        <span class="hero-symbol" aria-hidden="true">Aa<span>↗</span></span>
+      </section>
+      <!-- Document upload controls -->
+      <section id="upload">
+        <div class="section-head">
+          <h2><span>01</span> Add your document</h2>
+          <button id="sample" class="secondary">Explore sample ↗</button>
+        </div>
+        <label class="dropzone" id="dropzone"
+          ><span class="upload-icon" aria-hidden="true">↥</span
+          ><strong>Drop your document here</strong
+          ><span
+            >Word, PowerPoint, PDF, Excel, OpenDocument, RTF or text · up to 3
+            MB</span
+          ><input
+            id="file"
+            type="file"
+            aria-label="Choose a document containing text"
+        /></label>
+        <p id="message" role="status" aria-live="polite">
+          Your workspace is ready. Upload a document or explore our sample.
+          Scanned images need OCR first; older .doc/.ppt files must be exported
+          as .docx/.pptx or PDF.
+        </p>
+      </section>
+      <div id="results" hidden>
+        <!-- Python-calculated statistics -->
+        <section id="overview">
+          <div class="section-head">
+            <h2><span>02</span> Document overview</h2>
+            <span id="filename" class="muted"></span>
+          </div>
+          <div class="metrics">
+            <article>
+              <span>Total words</span><strong id="total"></strong
+              ><small>Every occurrence</small>
+            </article>
+            <article>
+              <span>Unique words</span><strong id="unique"></strong
+              ><small>Your vocabulary at a glance</small>
+            </article>
+            <article>
+              <span>Characters</span><strong id="characters"></strong
+              ><small>Including spaces & punctuation</small>
+            </article>
+            <article>
+              <span>Average word length</span><strong id="average"></strong
+              ><small>Characters per cleaned word</small>
+            </article>
+          </div>
+          <div class="metrics extra-metrics">
+            <article>
+              <span>Numeric tokens</span><strong id="numbers"></strong
+              ><small>Numbers after text cleaning</small>
+            </article>
+            <article>
+              <span>Unique numbers</span><strong id="unique-numbers"></strong
+              ><small>Distinct numeric tokens</small>
+            </article>
+            <article>
+              <span>Digit characters</span><strong id="digits"></strong
+              ><small>Digits in extracted text</small>
+            </article>
+            <article>
+              <span>Lines / paragraphs</span><strong id="lines"></strong
+              ><small>Nonempty lines · text blocks</small>
+            </article>
+          </div>
+          <div class="extremes">
+            <article>
+              <span id="most-label"></span>
+              <p id="most"></p>
+            </article>
+            <article>
+              <span id="least-label"></span>
+              <p id="least"></p>
+            </article>
+          </div>
+          <details>
+            <summary>Extracted text & counting rules</summary>
+            <p>
+              Text is lowercased. Punctuation, apostrophes, hyphens, symbols and
+              whitespace separate words. Unicode letters and numbers remain. All
+              tied words are included alphabetically. No stopwords are removed.
+            </p>
+            <pre id="original"></pre>
+          </details>
+        </section>
+        <!-- Search, table and chart display -->
+        <section id="explore">
+          <div class="section-head">
+            <h2><span>03</span> Explore your words</h2>
+            <span class="muted">Small details. Useful insights.</span>
+          </div>
+          <label for="search">Find a word</label
+          ><input
+            id="search"
+            type="search"
+            placeholder="Search a word in the complete document…"
+          />
+          <p id="search-result" aria-live="polite"></p>
+          <div class="controls">
+            <div>
+              <label for="sort">Sort results</label
+              ><select id="sort">
+                <option value="high">Highest frequency first</option>
+                <option value="low">Lowest frequency first</option>
+                <option value="az">Alphabetical (A–Z)</option>
+                <option value="za">Reverse alphabetical (Z–A)</option>
+              </select>
+            </div>
+            <div>
+              <label for="minimum">Minimum occurrences</label
+              ><input id="minimum" type="number" min="1" step="1" value="1" />
+            </div>
+          </div>
+          <div class="analysis-grid">
+            <article class="panel">
+              <h3>Word frequency</h3>
+              <p id="table-caption" class="muted"></p>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col">Word</th>
+                      <th scope="col">Occurrences</th>
+                      <th scope="col">Share</th>
+                    </tr>
+                  </thead>
+                  <tbody id="rows"></tbody>
+                </table>
+              </div>
+              <p id="empty-table" hidden>
+                No words meet this minimum. Lower the filter to see results.
+              </p>
+              <div class="pagination">
+                <button id="previous" class="secondary">← Previous</button
+                ><span id="page-info"></span
+                ><button id="next" class="secondary">Next →</button>
+              </div>
+            </article>
+            <article class="panel">
+              <div class="section-head">
+                <h3>Words that stand out</h3>
+                <select id="top" aria-label="Number of top words">
+                  <option value="5">Top 5</option>
+                  <option value="10" selected>Top 10</option>
+                  <option value="15">Top 15</option>
+                  <option value="20">Top 20</option>
+                </select>
+              </div>
+              <div
+                id="chart"
+                role="img"
+                aria-label="Top word frequencies"
+              ></div>
+              <p class="muted">
+                Top words across the complete document, independent of table
+                filters.
+              </p>
+            </article>
+          </div>
+        </section>
+        <!-- Save the report generated by Python -->
+        <section class="export">
+          <div>
+            <span class="eyebrow">YOUR INSIGHTS, TO GO</span>
+            <h2>Keep the complete picture.</h2>
+            <p>
+              All document statistics and every word frequency in one text
+              report.
+            </p>
+          </div>
+          <button id="download">↓ Download report</button>
+        </section>
+      </div>
+      <footer><strong>SSECOUNT</strong> · Text Analysis Studio</footer>
+    </main>
+  </body>
+</html>
