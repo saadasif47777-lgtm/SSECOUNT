@@ -14,6 +14,23 @@ let currentPage = 1;
 let requestNumber = 0;
 let controlTimer = null;
 
+// Loading state belongs to the latest request. Uploads remain available so a
+// user can replace a document while its older request is still in flight.
+function setBusy(busy) {
+  byId("workspace").setAttribute("aria-busy", String(busy));
+  byId("sample").disabled = busy;
+  byId("download").disabled = busy || !analysis;
+  byId("sample").firstChild.textContent = busy
+    ? "Analyzing… "
+    : "Try a sample ";
+  const badge = document.querySelector(".workspace-badge");
+  badge.lastChild.textContent = busy
+    ? "Analyzing document"
+    : analysis
+      ? "Analysis complete"
+      : "Ready to explore";
+}
+
 function showMessage(text, kind = "") {
   byId("message").textContent = text;
   byId("message").className = kind;
@@ -47,9 +64,12 @@ async function requestAnalysis(newDocument = false) {
   if (newDocument) {
     analysis = null;
     byId("results").hidden = true;
+    byId("empty-state").hidden = false;
+    updateResultLinks(false);
     resetControls();
   }
-  showMessage("Analyzing your document…");
+  setBusy(true);
+  showMessage("Analyzing your document…", "loading");
 
   const controls = readControls();
   const settings = { method: "POST" };
@@ -75,6 +95,8 @@ async function requestAnalysis(newDocument = false) {
     currentPage = data.dashboard.table.page;
     renderDashboard();
     byId("results").hidden = false;
+    byId("empty-state").hidden = true;
+    updateResultLinks(true);
     showMessage("Analyzed successfully: " + data.file_name, "success");
   } catch (error) {
     if (thisRequest !== requestNumber) return;
@@ -86,14 +108,17 @@ async function requestAnalysis(newDocument = false) {
     showMessage(explanation, "error");
     // Keep an existing document visible when a control value is invalid.
     // New-document requests already cleared the previous results above.
+  } finally {
+    // An older response must never reset a newer request's loading feedback.
+    if (thisRequest === requestNumber) setBusy(false);
   }
 }
 
 function renderDashboard() {
   byId("filename").textContent = analysis.file_name;
-  byId("total").textContent = analysis.total_words;
-  byId("unique").textContent = analysis.unique_words;
-  byId("characters").textContent = analysis.characters;
+  byId("total").textContent = analysis.total_words.toLocaleString();
+  byId("unique").textContent = analysis.unique_words.toLocaleString();
+  byId("characters").textContent = analysis.characters.toLocaleString();
   byId("average").textContent = analysis.dashboard.average_display;
   byId("most-label").textContent =
     "Most frequent · " + analysis.highest + " occurrences each";
@@ -169,6 +194,8 @@ function renderChart() {
 function chooseFile(file) {
   selectedFile = file;
   useSample = false;
+  // Reset the native value so choosing the same file again still fires change.
+  byId("file").value = "";
   requestAnalysis(true);
 }
 
@@ -239,3 +266,50 @@ for (const type of ["dragleave", "drop"]) {
 dropzone.addEventListener("drop", function fileDropped(event) {
   if (event.dataTransfer.files[0]) chooseFile(event.dataTransfer.files[0]);
 });
+
+// Before analysis, result links lead to an explanatory empty state. Once real
+// results arrive they point directly to the overview and word insight sections.
+const resultLinks = [
+  ...document.querySelectorAll(
+    '.nav-link[href="#overview"], .nav-link[href="#explore"]',
+  ),
+];
+for (const link of resultLinks)
+  link.dataset.resultTarget = link.getAttribute("href");
+function updateResultLinks(ready) {
+  for (const link of resultLinks) {
+    link.setAttribute(
+      "href",
+      ready ? link.dataset.resultTarget : "#empty-state",
+    );
+  }
+}
+updateResultLinks(false);
+setBusy(false);
+
+// Mirror the section being read in the sidebar, including keyboard navigation.
+const navLinks = [...document.querySelectorAll(".nav-link")];
+function markNavigation(link) {
+  for (const item of navLinks) {
+    item.classList.toggle("active", item === link);
+    if (item === link) item.setAttribute("aria-current", "location");
+    else item.removeAttribute("aria-current");
+  }
+}
+for (const link of navLinks)
+  link.addEventListener("click", () => markNavigation(link));
+if ("IntersectionObserver" in window) {
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const visible = entries.find((entry) => entry.isIntersecting);
+      if (!visible) return;
+      const link = navLinks.find(
+        (item) => item.getAttribute("href") === "#" + visible.target.id,
+      );
+      if (link) markNavigation(link);
+    },
+    { rootMargin: "-10% 0px -65% 0px", threshold: 0 },
+  );
+  for (const id of ["upload", "overview", "explore"])
+    observer.observe(byId(id));
+}
